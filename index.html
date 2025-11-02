@@ -6,6 +6,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Link to the stylesheet -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- inline styles for fireworks canvas -->
+  <style>
+    #fwCanvas {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -17,12 +31,30 @@
 
     <!-- The form where the player types their guesses -->
     <form id="guessForm">
-      <input type="text" id="author"   placeholder="Author (e.g., John)"   required>
-      <input type="text" id="book"     placeholder="Book (e.g., John)"     required>
-      <input type="number" id="chapter" placeholder="Chapter (e.g., 3)"    required>
-      <input type="number" id="verseNum" placeholder="Verse (e.g., 16)"     required>
+      <label for="writer">Writer</label>
+      <input type="text" id="writer"
+             placeholder="writer (e.g., John)"
+             list="writer-list" required>
+
+      <label for="book">Book</label>
+      <input type="text" id="book"
+             placeholder="Book (e.g., John)"
+             list="book-list" required>
+
+      <label for="chapter">Chapter</label>
+      <input type="number" id="chapter"
+             placeholder="Chapter (e.g., 3)" required>
+
+      <label for="verseNum">Verse</label>
+      <input type="number" id="verseNum"
+             placeholder="Verse (e.g., 16)" required>
+
       <button type="submit">Submit Guess</button>
     </form>
+
+    <!-- Autocomplete lists – will be populated by script.js -->
+    <datalist id="book-list"></datalist>
+    <datalist id="writer-list"></datalist>
 
     <!-- Where we show the coloured dots for each part -->
     <div id="resultDots" class="dots"></div>
@@ -36,6 +68,9 @@
     <!-- Simple “Next” button for manual testing (optional) -->
     <button id="nextBtn" style="display:none;">Next Day’s Verse</button>
   </div>
+
+  <!-- fireworks canvas (hidden until triggered) -->
+  <canvas id="fwCanvas" aria-hidden="true"></canvas>
 
   <!-- Load the script after the DOM is ready -->
   <script src="script.js" defer></script>

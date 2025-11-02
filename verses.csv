@@ -1,35 +1,35 @@
-date,text,author,book,chapter,verse
-2025-10-28,For God so loved the world that He gave His only Son.,John,John,3,16
-2025-10-29,The Lord is my shepherd; I shall not want.,David,Psalm,23,1
-2025-10-30,In the beginning God created the heavens and the earth.,Moses,Genesis,1,1
-2025-10-31,test,test,test,1,1
-2025-11-01,"Out of the mouth of children and infants, you have brought forth praise.",Matthew,Matthew,21,16
-2025-11-02,"Let us not sleep on as the rest do, but let us stay awake and keep our senses.",Paul,1st Thessalonians,5,6
-2025-11-03,"When [Jehovah] says something, will he not do it",Moses,Numbers,23,19
-2025-11-04,"Where are your stings, Odeath",Hosea,Hosea,13,14
-2025-11-05,By God we will gain power.,Psalmist,Psalms,108,13
-2025-11-06,Give thanks for everything.,Paul,1st Thessalonians,5,18
-2025-11-07,"Keep asking in faith, not doubting at all.",James,James,1,6
-2025-11-08,"[Loves] flames are a blazing fire, the flame of Jah. Surging waters cannot extinguish love, nor can rivers wash it away.",Solomon,Song of Solomon,8,"6,7."
-2025-11-09,Do not be afraid.,Daniel,Daniel,10,19
-2025-11-10,Make sure of all things.,Paul,1st Thessalonians,5,21
-2025-11-11,He has revealed his confidential matter to his servants.,Amos,Amos,3,7
-2025-11-12,"Let us continue loving one another, because love is from God",John,1st John,4,7
-2025-11-13,Throw off every weight.,Paul,Hebrews,12,1
-2025-11-14,Do not let your adornment be external.,Peter,1st Peter,3,3
-2025-11-15,"Listen intently to me, and eat what is good, and you will find great delight in what is truly rich.",Isaiah,Isaiah,55,2
-2025-11-16,"The one slow to anger is better than a mighty man, and the one controlling his temper than one conquering a city.",Solomon,Proverbs,16,32
-2025-11-17,You will appoint them as princes in all the earth.,Psalmist,Psalms,45,16
-2025-11-18,By undeserved kindness you have been saved.,Paul,Ephesians,2,5
-2025-11-19,Be in subjection to the superior authorities.,Paul,Romans,13,1
-2025-11-20,Jehovahs spirit empowered him.,Samuel,Judges,15,14
-2025-11-21,"This is according to the eternal purpose that he formed in connection with the Christ, Jesus our Lord.",Paul,Ephesians,3,11
-2025-11-22,"If Jehovah had not been my helper, I would soon have perished.",Psalmist,Psalms,94,17
-2025-11-23,The result of humility and the fear of Jehovah is riches and glory and life.,Solomon,Proverbs,22,4
-2025-11-24,Overlook an offense.,Solomon,Proverbs,19,11
-2025-11-25,"Women should adorn themselves in appropriate dress, ...in the way that is proper for women professing devotion to God.",Paul,1st Timothy,2,"9,10."
-2025-11-26,"Let us rejoice, based on hope of the glory of God.",Paul,Romans,5,2
-2025-11-27,The peace of God that surpasses all understanding will guard your hearts and your mental powers.,Paul,Philemon,4,7
-2025-11-28,"Our Father in the heavens, let your name be sanctified.",Matthew,Matthew,6,9
-2025-11-29,With what will I repay Jehovah for all the good he has done for me,Psalmist,Psalms,116,12
-2025-11-30,I have approved you,Luke,Luke,3,22
+date,text,writer,book,chapter,verse
+2025-10-28,'For God so loved the world that He gave His only Son.',John,John,3,16
+2025-10-29,'The Lord is my shepherd; I shall not want.',David,Psalm,23,1
+2025-10-30,'In the beginning God created the heavens and the earth.',Moses,Genesis,1,1
+2025-10-31,'test',test,test,1,1
+2025-11-01,'Out of the mouth of children and infants* you have brought forth praise.',Matthew,Matthew,21,16
+2025-11-02,Let us not sleep on as the rest do* but let us stay awake and keep our senses.,Paul,1 Thessalonians,5,6
+2025-11-03,'When [Jehovah] says something* will he not do it',Moses,Numbers,23,19
+2025-11-04,'Where are your stings* Odeath',Hosea,Hosea,13,14
+2025-11-05,'By God we will gain power.',Psalmist,Psalms,108,13
+2025-11-06,'Give thanks for everything.',Paul,1 Thessalonians,5,18
+2025-11-07,'Keep asking in faith* not doubting at all.',James,James,1,6
+2025-11-08,'[Loves] flames are a blazing fire* the flame of Jah. Surging waters cannot extinguish love* nor can rivers wash it away.',Solomon,Song of Solomon,8,"6,7."
+2025-11-09,'Do not be afraid.',Daniel,Daniel,10,19
+2025-11-10,'Make sure of all things.',Paul,1 Thessalonians,5,21
+2025-11-11,'He has revealed his confidential matter to his servants.',Amos,Amos,3,7
+2025-11-12,'Let us continue loving one another* because love is from God',John,1st John,4,7
+2025-11-13,'Throw off every weight.',Paul,Hebrews,12,1
+2025-11-14,'Do not let your adornment be external.',Peter,1st Peter,3,3
+2025-11-15,'Listen intently to me* and eat what is good* and you will find great delight in what is truly rich.',Isaiah,Isaiah,55,2
+2025-11-16,'The one slow to anger is better than a mighty man* and the one controlling his temper than one conquering a city.',Solomon,Proverbs,16,32
+2025-11-17,'You will appoint them as princes in all the earth.',Psalmist,Psalms,45,16
+2025-11-18,'By undeserved kindness you have been saved.',Paul,Ephesians,2,5
+2025-11-19,'Be in subjection to the superior authorities.',Paul,Romans,13,1
+2025-11-20,'Jehovahs spirit empowered him.',Samuel,Judges,15,14
+2025-11-21,'This is according to the eternal purpose that he formed in connection with the Christ* Jesus our Lord.',Paul,Ephesians,3,11
+2025-11-22,'If Jehovah had not been my helper* I would soon have perished.',Psalmist,Psalms,94,17
+2025-11-23,'The result of humility and the fear of Jehovah is riches and glory and life.',Solomon,Proverbs,22,4
+2025-11-24,'Overlook an offense.',Solomon,Proverbs,19,11
+2025-11-25,'Women should adorn themselves in appropriate dress* ...in the way that is proper for women professing devotion to God.',Paul,1 Timothy,2,"9,10."
+2025-11-26,'Let us rejoice* based on hope of the glory of God.',Paul,Romans,5,2
+2025-11-27,'The peace of God that surpasses all understanding will guard your hearts and your mental powers.',Paul,Philemon,4,7
+2025-11-28,'Our Father in the heavens* let your name be sanctified.',Matthew,Matthew,6,9
+2025-11-29,'With what will I repay Jehovah for all the good he has done for me',Psalmist,Psalms,116,12
+2025-11-30,'I have approved you',Luke,Luke,3,22
