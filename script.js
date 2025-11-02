@@ -321,6 +321,7 @@ if (guessFormEl) {
     if (allCorrect) {
       feedbackEl.textContent = '✅ Perfect! You got everything right.';
       document.getElementById('nextBtn').style.display = 'inline-block';
+      recordWinForToday();                       // <-- record the success
       // trigger fireworks for correct answer
       if (typeof startFireworks === 'function') startFireworks(3000); // 3s by default
       return;                                   // round ends – no attempt penalty
@@ -483,3 +484,73 @@ function stopFireworks() {
   }
   canvas.style.display = 'none';
 }
+
+// Simple day helper (uses TEST_TODAY when set)
+function getTodayIso() {
+  return (typeof TEST_TODAY === 'string' && TEST_TODAY) ? TEST_TODAY : new Date().toISOString().slice(0, 10);
+}
+
+// localStorage key
+const STATS_KEY = 'bg_user_stats_v1';
+
+// load / save
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (!raw) return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {} };
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('loadStats failed', e);
+    return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {} };
+  }
+}
+function saveStats(s) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch (e) { console.error('saveStats failed', e); }
+}
+
+// helper: ISO date for "yesterday"
+function isoOffsetDays(iso, delta) {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+// record a win for today (idempotent)
+function recordWinForToday() {
+  const today = getTodayIso();
+  const stats = loadStats();
+  if (stats.wins && stats.wins[today]) {
+    // already recorded today
+    return stats;
+  }
+
+  stats.wins = stats.wins || {};
+  stats.wins[today] = true;
+  stats.totalWins = (stats.totalWins || 0) + 1;
+  stats.totalDays = Object.keys(stats.wins).length;
+
+  // compute streak
+  if (stats.lastWin === today) {
+    // nothing
+  } else if (stats.lastWin && stats.lastWin === isoOffsetDays(today, -1)) {
+    stats.streak = (stats.streak || 0) + 1;
+  } else {
+    stats.streak = 1;
+  }
+  stats.lastWin = today;
+
+  saveStats(stats);
+  displayStats();
+  return stats;
+}
+
+// render a small stats summary in the UI
+function displayStats() {
+  const el = document.getElementById('stats');
+  if (!el) return;
+  const s = loadStats();
+  el.innerHTML = `Streak: <strong>${s.streak || 0}</strong> day(s) · Total wins: <strong>${s.totalWins || 0}</strong> · Days played: <strong>${s.totalDays || 0}</strong>`;
+}
+
+// call displayStats on load so users immediately see their stats
+displayStats();
