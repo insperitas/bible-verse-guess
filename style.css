@@ -71,7 +71,6 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
-<<<<<<< HEAD
 button:hover { background: #1565c0; }
 
 /* Theme variables */
@@ -288,6 +287,14 @@ h1::after{
 
 /* fireworks canvas sits above everything when active */
 #fwCanvas{ z-index: 99999; pointer-events: none; }
-=======
-button:hover { background: #1565c0; }
->>>>>>> c504618 (Initial commit – Bible verse guessing game)
+
+/* JW link – prominent, high-contrast for readability */
+.jw-link{
+  display:inline-block;
+  margin-top:8px;
+  font-size:1.05rem;
+  font-weight:700;
+  color: var(--accent-2);
+  text-decoration: underline;
+}
+.jw-link:hover{ color: #fff; }
