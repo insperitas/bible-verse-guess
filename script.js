@@ -34,6 +34,7 @@ let verses = [];          // all rows from the CSV
 let todayVerse = null;    // the verse object for today
 let attemptsLeft = 5;     // max attempts per round
 const MAX_ATTEMPTS = 5;   // keep a constant if you need it later
+let bookWrongCount = 0;   // number of times the player has guessed the book incorrectly this round
 
 /* -------------------------------------------------
    Helper: tiny CSV parser (expects a header row)
@@ -41,7 +42,8 @@ const MAX_ATTEMPTS = 5;   // keep a constant if you need it later
 function parseCSV(csvText) {
   // --- BEGIN: Improved CSV parsing for quoted fields (easy to revert) ---
   const lines = csvText.trim().split('\n');
-  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+  // normalize header names: lower-case and replace spaces with underscores
+  const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
 
   return lines.slice(1).map(line => {
     // Split only on commas outside quotes
@@ -144,13 +146,45 @@ if (writerInput) {
 }
 
 /* -------------------------------------------------
-   Load the CSV file (fetch works on a local server)
+   Load the CSV file (works locally and on GitHub Pages)
+   Tries CSV_URL first, then a couple of sensible fallbacks
    ------------------------------------------------- */
-fetch(CSV_URL)
-  .then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.text();
-  })
+function tryFetchCsv(urls) {
+  // tries each URL in order, returns a promise that resolves to the text
+  let idx = 0;
+  function attempt() {
+    if (idx >= urls.length) return Promise.reject(new Error('All fetch attempts failed'));
+    const u = urls[idx++];
+    console.log('Attempting to load CSV from', u);
+    return fetch(u).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${u}`);
+      return r.text();
+    }).catch(err => {
+      console.warn('Fetch failed for', u, err.message);
+      return attempt();
+    });
+  }
+  return attempt();
+}
+
+// Build fallback URL candidates
+const candidateUrls = [CSV_URL];
+try {
+  // base path of current page (keeps any repo subpath)
+  const pathBase = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/\/[^/]*$/, '/');
+  const baseCandidate = location.origin + pathBase;
+  candidateUrls.push(baseCandidate + 'verses.csv');
+} catch (e) {
+  // ignore
+}
+// If repository info is known, try GitHub Pages canonical URL
+try {
+  const ghOwner = 'insperitas';
+  const ghRepo = 'bible-verse-guess';
+  candidateUrls.push(`https://` + ghOwner + `.github.io/` + ghRepo + `/verses.csv`);
+} catch (e) {}
+
+tryFetchCsv(candidateUrls)
   .then(csv => {
     verses = parseCSV(csv);
     console.log('✅ CSV parsed – rows:', verses.length);
@@ -163,7 +197,7 @@ fetch(CSV_URL)
   .catch(err => {
     console.error('❌ CSV load error →', err);
     const verseEl = document.getElementById('verse');
-    if (verseEl) verseEl.textContent = '⚠️ Could not load verse data – see console.';
+    if (verseEl) verseEl.textContent = '⚠️ Could not load verse data – check that verses.csv is published and reachable (see console).';
   });
 
 /* -------------------------------------------------
@@ -192,7 +226,12 @@ function startRound() {
 
   // Show the verse text
   const verseEl = document.getElementById('verse');
-  if (verseEl) verseEl.textContent = `"${todayVerse.text}"`;
+  if (verseEl) {
+    // strip any accidental surrounding quotes (CSV parser already strips most quotes)
+    let t = String(todayVerse.text || '');
+    if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1);
+    verseEl.textContent = t;
+  }
 
   // Reset UI for a fresh round
   attemptsLeft = 5;
@@ -207,8 +246,10 @@ function startRound() {
 
   const formEl = document.getElementById('guessForm');
   if (formEl) formEl.reset();
-
-  // Next button removed from UI — no action required here
+  // Reset clue counter & clear any displayed clues
+  bookWrongCount = 0;
+  const cluesEl = document.getElementById('clues');
+  if (cluesEl) cluesEl.innerHTML = '';
 }
 
 
@@ -303,6 +344,22 @@ if (guessFormEl) {
       dot.title = `${part.charAt(0).toUpperCase() + part.slice(1)} ${results[part] ? '✔' : '✘'}`;
       dotContainer.appendChild(dot);
     });
+
+    // If the book guess is wrong, show the next clue (if available)
+    if (!results.book) {
+      bookWrongCount = (bookWrongCount || 0) + 1;
+      const clueKey = `clue_${bookWrongCount}`;
+      const clueText = todayVerse && (todayVerse[clueKey] || todayVerse[clueKey.toLowerCase()]);
+      if (clueText) {
+        const cluesEl = document.getElementById('clues');
+        if (cluesEl) {
+          const p = document.createElement('p');
+          p.className = 'clue';
+          p.textContent = `Clue ${bookWrongCount}: ${clueText}`;
+          cluesEl.appendChild(p);
+        }
+      }
+    }
 
     // -----------------------------------------------------------------
     // 7️⃣ Did the player get everything right?
