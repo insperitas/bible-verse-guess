@@ -387,7 +387,23 @@ if (guessFormEl) {
       }
 
     // Next button removed — no UI action needed
-      recordWinForToday();                       // <-- record the success
+      // compute attempts used (1 = first try)
+      const attemptsUsed = MAX_ATTEMPTS - attemptsLeft + 1;
+      try {
+        const score = computeScore(guess, todayVerse, attemptsUsed);
+        // persist numeric score for today
+        recordScoreForToday(score);
+        // show the numeric score in the feedback area
+        const pScore = document.createElement('p');
+        pScore.className = 'round-score';
+        pScore.textContent = `Score for today: ${score}/100`;
+        feedbackEl.appendChild(document.createElement('br'));
+        feedbackEl.appendChild(pScore);
+      } catch (e) {
+        console.error('Scoring failed', e);
+      }
+
+      recordWinForToday();                       // <-- record the success (win metadata)
       // trigger fireworks for correct answer
       if (typeof startFireworks === 'function') {
         console.log('Triggering fireworks for correct answer');
@@ -423,6 +439,20 @@ if (guessFormEl) {
         feedbackEl.appendChild(a);
       } catch (e) {
         console.error('Could not append JW link', e);
+      }
+
+      // compute and save a numeric score for today based on the final (failed) guess
+      try {
+        const attemptsUsed = MAX_ATTEMPTS - attemptsLeft; // when attemptsLeft===0 this equals MAX_ATTEMPTS
+        const score = computeScore(guess, todayVerse, attemptsUsed);
+        recordScoreForToday(score);
+        const pScore = document.createElement('p');
+        pScore.className = 'round-score';
+        pScore.textContent = `Score for today: ${score}/100`;
+        feedbackEl.appendChild(document.createElement('br'));
+        feedbackEl.appendChild(pScore);
+      } catch (e) {
+        console.error('Failed to compute/save score on round end', e);
       }
 
     // Next button removed — no UI action needed
@@ -583,11 +613,14 @@ const STATS_KEY = 'bg_user_stats_v1';
 function loadStats() {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    if (!raw) return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {} };
-    return JSON.parse(raw);
+    if (!raw) return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {}, scores: {} };
+    const parsed = JSON.parse(raw);
+    // Backwards-compat: ensure scores map exists
+    if (!parsed.scores) parsed.scores = {};
+    return parsed;
   } catch (e) {
     console.error('loadStats failed', e);
-    return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {} };
+    return { totalWins: 0, totalDays: 0, streak: 0, lastWin: null, wins: {}, scores: {} };
   }
 }
 function saveStats(s) {
@@ -599,6 +632,74 @@ function isoOffsetDays(iso, delta) {
   const d = new Date(iso + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + delta);
   return d.toISOString().slice(0, 10);
+}
+
+/* -------------------------------------------------
+   Scoring: compute a 0-100 score for a round
+   Inputs:
+     - guess: { writer, book, chapter, verse } (normalized writer/book)
+     - answer: todayVerse row from CSV (raw values: writer/book/chapter/verse)
+     - attemptsUsed: integer >=1 (1 = first try)
+   Outputs: integer score 0..100
+   ------------------------------------------------- */
+function computeScore(guess, answer, attemptsUsed) {
+  // defensive checks
+  if (!answer || !guess || !Number.isFinite(attemptsUsed)) return 0;
+
+  // Weights (sum to 100)
+  const W = { writer: 25, book: 30, chapter: 20, verse: 25 };
+
+  // writer & book are strict equality (normalized)
+  const writerScore = (guess.writer === normalize(answer.writer)) ? 1 : 0;
+  const bookScore = (guess.book === normalize(answer.book)) ? 1 : 0;
+
+  // Chapter proximity: exact=1, ±1=0.6, within 3=0.3, else 0
+  let chapterScore = 0;
+  if (Number.isFinite(guess.chapter) && Number.isFinite(answer.chapter)) {
+    const d = Math.abs(guess.chapter - answer.chapter);
+    if (d === 0) chapterScore = 1;
+    else if (d === 1) chapterScore = 0.6;
+    else if (d <= 3) chapterScore = 0.3;
+    else chapterScore = 0;
+  }
+
+  // Verse proximity: exact=1, ±1=0.7, within 3=0.4, within 10=0.15, else 0
+  let verseScore = 0;
+  if (Number.isFinite(guess.verse) && Number.isFinite(answer.verse)) {
+    const d = Math.abs(guess.verse - answer.verse);
+    if (d === 0) verseScore = 1;
+    else if (d === 1) verseScore = 0.7;
+    else if (d <= 3) verseScore = 0.4;
+    else if (d <= 10) verseScore = 0.15;
+    else verseScore = 0;
+  }
+
+  const base = writerScore * W.writer + bookScore * W.book + chapterScore * W.chapter + verseScore * W.verse;
+
+  // Attempts multiplier: first try = 1.0, then decays. Keep a sensible floor.
+  const decayPerExtraAttempt = 0.12; // reduce multiplier per extra attempt after the first
+  const mult = Math.max(0.35, 1 - (attemptsUsed - 1) * decayPerExtraAttempt);
+
+  const finalScore = Math.round(Math.max(0, Math.min(100, base * mult)));
+  return finalScore;
+}
+
+// Record a numeric score for today (idempotent). Stores under stats.scores[YYYY-MM-DD]
+function recordScoreForToday(score) {
+  try {
+    const today = getTodayIso();
+    const stats = loadStats();
+    stats.scores = stats.scores || {};
+    // Only store highest score for the day (in case of multiple wins)
+    const existing = Number.isFinite(stats.scores[today]) ? stats.scores[today] : null;
+    if (existing === null || score > existing) stats.scores[today] = score;
+    stats.lastScore = stats.scores[today];
+    saveStats(stats);
+    displayStats();
+    return stats;
+  } catch (e) {
+    console.error('recordScoreForToday failed', e);
+  }
 }
 
 // record a win for today (idempotent)
@@ -635,7 +736,13 @@ function displayStats() {
   const el = document.getElementById('stats');
   if (!el) return;
   const s = loadStats();
+  // Show basic stats plus today's numeric score if available
+  const today = getTodayIso();
+  const todaysScore = (s.scores && Number.isFinite(s.scores[today])) ? s.scores[today] : null;
   el.innerHTML = `Streak: <strong>${s.streak || 0}</strong> day(s) · Total wins: <strong>${s.totalWins || 0}</strong> · Days played: <strong>${s.totalDays || 0}</strong>`;
+  if (todaysScore !== null) {
+    el.innerHTML += ` · Today's score: <strong>${todaysScore}/100</strong>`;
+  }
 }
 
 // call displayStats on load so users immediately see their stats
