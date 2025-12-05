@@ -308,3 +308,21 @@ h1::after{
   padding:6px 10px;
   border-radius:8px;
 }
+
+/* Share button and round score */
+.share-btn{
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--accent-2);
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+.share-btn:hover{ background: rgba(255,255,255,0.02); }
+
+.round-score{
+  margin-top:8px;
+  font-weight:700;
+  color: var(--accent-2);
+}

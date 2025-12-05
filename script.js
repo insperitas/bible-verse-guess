@@ -695,7 +695,8 @@ function recordScoreForToday(score) {
     if (existing === null || score > existing) stats.scores[today] = score;
     stats.lastScore = stats.scores[today];
     saveStats(stats);
-    displayStats();
+  displayStats();
+  try { updateScoreUI(); } catch (e) { /* UI may not be ready yet */ }
     return stats;
   } catch (e) {
     console.error('recordScoreForToday failed', e);
@@ -747,3 +748,91 @@ function displayStats() {
 
 // call displayStats on load so users immediately see their stats
 displayStats();
+
+/* -------------------------------------------------
+   UI helpers: update score UI, temporary messages, and share action
+   ------------------------------------------------- */
+// Small helper: show a temporary message in the feedback area
+function showTemporaryMessage(msg, timeout = 2500) {
+  const feedbackEl = document.getElementById('feedback');
+  if (!feedbackEl) return;
+  const span = document.createElement('span');
+  span.className = 'temp-msg';
+  span.textContent = msg;
+  span.style.display = 'inline-block';
+  span.style.marginLeft = '8px';
+  span.style.fontWeight = '600';
+  feedbackEl.appendChild(span);
+  setTimeout(() => { if (span && span.parentNode) span.parentNode.removeChild(span); }, timeout);
+}
+
+// Update the small score UI and toggle the Share button
+function updateScoreUI() {
+  const today = getTodayIso();
+  const stats = loadStats();
+  const score = (stats.scores && Number.isFinite(stats.scores[today])) ? stats.scores[today] : null;
+  const disp = document.getElementById('todayScoreDisplay');
+  const btn = document.getElementById('shareBtn');
+  if (disp) {
+    if (score !== null) {
+      disp.textContent = `Today's score: ${score}/100`;
+    } else {
+      disp.textContent = '';
+    }
+  }
+  if (btn) {
+    if (score !== null) {
+      btn.style.display = 'inline-block';
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+}
+
+// Share today's score – uses Web Share API when available, otherwise copies text to clipboard
+async function shareTodayScore() {
+  try {
+    const today = getTodayIso();
+    const stats = loadStats();
+    const score = (stats.scores && Number.isFinite(stats.scores[today])) ? stats.scores[today] : null;
+    if (score === null) {
+      showTemporaryMessage('No score for today to share');
+      return;
+    }
+
+    const title = `My score on Bible Verse Guess: ${score}/100`;
+    const text = `I scored ${score}/100 on Bible Verse Guess for ${today}. Can you beat my score? Try it here: ${location.origin + location.pathname}`;
+    const url = location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        showTemporaryMessage('Shared successfully!');
+        return;
+      } catch (e) {
+        // user probably cancelled or share failed — fall back to clipboard
+        console.warn('navigator.share failed, falling back to clipboard', e);
+      }
+    }
+
+    // Fallback: copy text to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      showTemporaryMessage('Score copied to clipboard — paste to share!');
+    } else {
+      // very old browsers: select a prompt fallback
+      window.prompt('Copy this score to share:', text);
+    }
+  } catch (e) {
+    console.error('shareTodayScore failed', e);
+    showTemporaryMessage('Could not share score');
+  }
+}
+
+// Wire the share button (if present)
+try {
+  const _shareBtn = document.getElementById('shareBtn');
+  if (_shareBtn) _shareBtn.addEventListener('click', shareTodayScore);
+  // Initialise the score UI on load
+  try { updateScoreUI(); } catch (e) { }
+} catch (e) { /* ignore wiring errors */ }
