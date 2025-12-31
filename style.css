@@ -134,22 +134,23 @@ h1{
 }
 
 /* Form layout */
+/* Stack form fields vertically (four rows) */
 #guessForm{
   display:grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap:12px 16px;
-  align-items:end;
-  margin-bottom:14px;
+  grid-template-columns: 1fr;
+  gap:10px 0;
+  align-items:start;
+  margin-bottom:12px;
 }
 
 /* Labels */
-#guessForm label{
-  display:block;
-  font-size:0.75rem;
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:0.6px;
-  margin-bottom:6px;
+/* visually hidden labels (keeps accessibility but removes visual footprint) */
+.sr-only{
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
 }
 
 /* Ensure label + input occupy full column */
@@ -163,20 +164,20 @@ h1{
 #guessForm input[type="text"],
 #guessForm input[type="number"]{
   width:100%;
-  padding:10px 12px;
+  padding:8px 10px;
   border-radius:8px;
   border:1px solid rgba(255,255,255,0.04);
   background: rgba(255,255,255,0.02);
   color: #e9f6ff;
-  font-size:0.95rem;
-  transition: box-shadow .15s ease, transform .08s ease, border-color .12s ease;
+  font-size:0.92rem;
+  transition: box-shadow .12s ease, transform .06s ease, border-color .1s ease;
   outline: none;
   -webkit-appearance: none;
 }
 
 /* Make the two number fields a bit narrower visually by grouping */
 #chapter, #verseNum{
-  max-width:160px;
+  max-width:120px;
 }
 
 /* Focus styles */
@@ -195,7 +196,7 @@ h1{
 #guessForm button[type="submit"]{
   grid-column: 1 / -1;
   justify-self:end;
-  padding:10px 18px;
+  padding:9px 16px;
   border-radius:10px;
   border: none;
   background: linear-gradient(90deg,var(--accent),var(--accent-2));
@@ -267,8 +268,7 @@ h1{
 #nextBtn:hover{ color: white; }
 
 /* Responsive: stack fields on small screens */
-@media (max-width:640px){
-  #guessForm{ grid-template-columns: 1fr; }
+@media (max-width:420px){
   #chapter, #verseNum{ max-width:100%; }
   #guessForm button[type="submit"]{ width:100%; }
 }
@@ -291,13 +291,23 @@ h1::after{
 /* JW link – prominent, high-contrast for readability */
 .jw-link{
   display:inline-block;
-  margin-top:8px;
-  font-size:1.05rem;
+  margin-top:10px;
+  font-size:1.12rem;
   font-weight:700;
   color: var(--accent-2);
-  text-decoration: underline;
+  text-decoration: none;
+  padding:8px 10px;
+  border-radius:8px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.02);
 }
-.jw-link:hover{ color: #fff; }
+.jw-link:hover{ color: #fff; background: rgba(255,255,255,0.035); }
+
+/* Book-specific clue area inside the form – sits under the book input */
+#bookClues{
+  grid-column: 1 / -1;
+  margin-top:4px;
+}
 
 /* Clue styling */
 .clue {
