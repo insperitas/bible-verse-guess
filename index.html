@@ -35,23 +35,26 @@
 
     <!-- The form where the player types their guesses -->
     <form id="guessForm">
-      <label for="writer">Writer</label>
-      <input type="text" id="writer"
-             placeholder="writer (e.g., John)"
-             list="writer-list" required>
+            <label for="writer" class="sr-only">Writer</label>
+            <input type="text" id="writer"
+              placeholder="Writer (e.g., John)"
+              list="writer-list" required aria-label="Writer">
 
-      <label for="book">Book</label>
-      <input type="text" id="book"
-             placeholder="Book (e.g., John)"
-             list="book-list" required>
+                  <label for="book" class="sr-only">Book</label>
+                  <input type="text" id="book"
+                    placeholder="Book (e.g., John)"
+                    list="book-list" required aria-label="Book">
 
-      <label for="chapter">Chapter</label>
-      <input type="number" id="chapter"
-             placeholder="Chapter (e.g., 3)" required>
+                  <!-- Book-specific clues appear directly under the book input -->
+                  <div id="bookClues" class="clue-area" aria-live="polite"></div>
 
-      <label for="verseNum">Verse</label>
-      <input type="number" id="verseNum"
-             placeholder="Verse (e.g., 16)" required>
+            <label for="chapter" class="sr-only">Chapter</label>
+            <input type="number" id="chapter"
+              placeholder="Chap" required aria-label="Chapter">
+
+            <label for="verseNum" class="sr-only">Verse</label>
+            <input type="number" id="verseNum"
+              placeholder="Verse" required aria-label="Verse">
 
       <button type="submit">Submit Guess</button>
     </form>

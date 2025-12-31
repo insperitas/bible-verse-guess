@@ -28,6 +28,18 @@ const BIBLE_BOOKS = [
 ];
 
 /* -------------------------------------------------
+   OPTIONAL: canonical list of known Bible writers
+   This supplements writers found in the CSV so users can pick
+   traditional author names even if the CSV doesn't include them.
+   ------------------------------------------------- */
+const BIBLE_WRITERS = [
+  'Moses','David','Solomon','Isaiah','Jeremiah','Ezekiel','Daniel',
+  'Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi',
+  'Matthew','Mark','Luke','John','Paul','Peter','James','Jude','Luke','Ezra','Nehemiah','Esther','Joshua','Samuel','Luke','Luke',
+  'Unknown'
+];
+
+/* -------------------------------------------------
    GLOBAL STATE
    ------------------------------------------------- */
 let verses = [];          // all rows from the CSV
@@ -105,8 +117,10 @@ function populateWriterDatalist(filter = '') {
   const datalist = document.getElementById('writer-list');
   if (!datalist) return; // safety guard
 
-  // Build a unique sorted list of writers from the CSV data
-  const writers = Array.from(new Set(verses.map(v => v.writer).filter(Boolean))).sort();
+  // Build a unique sorted list of writers from the CSV data + canonical list
+  const csvWriters = verses.map(v => v.writer).filter(Boolean);
+  const combined = Array.from(new Set(csvWriters.concat(BIBLE_WRITERS)));
+  const writers = combined.sort((a, b) => String(a).localeCompare(String(b)));
 
   // Normalise the filter once
   const term = normalize(filter);
@@ -123,6 +137,15 @@ function populateWriterDatalist(filter = '') {
     opt.value = w;
     datalist.appendChild(opt);
   });
+}
+
+// Helper: check if a normalized writer exists in the CSV-derived data
+function isKnownWriter(normWriter) {
+  if (!normWriter) return false;
+  // Check CSV-derived writers first
+  if (verses.some(v => normalize(v.writer) === normWriter)) return true;
+  // Fall back to canonical writer list
+  return BIBLE_WRITERS.some(w => normalize(w) === normWriter);
 }
 
 // Hook the Book input so it updates the list as you type
@@ -227,8 +250,8 @@ function startRound() {
   // Show the verse text
   const verseEl = document.getElementById('verse');
   if (verseEl) {
-    // strip any accidental surrounding quotes (CSV parser already strips most quotes)
-    let t = String(todayVerse.text || '');
+    // Accept several possible CSV column names for the verse text (e.g. "text" or "verse_text")
+    let t = String(todayVerse.text || todayVerse.verse_text || todayVerse.verseText || '');
     if (t.startsWith('"') && t.endsWith('"')) t = t.slice(1, -1);
     verseEl.textContent = t;
   }
@@ -250,6 +273,9 @@ function startRound() {
   bookWrongCount = 0;
   const cluesEl = document.getElementById('clues');
   if (cluesEl) cluesEl.innerHTML = '';
+  // clear book-specific clues (shown under the book input)
+  const bookCluesEl = document.getElementById('bookClues');
+  if (bookCluesEl) bookCluesEl.innerHTML = '';
 }
 
 
@@ -292,8 +318,16 @@ if (guessFormEl) {
     };
 
     // -----------------------------------------------------------------
-    // 4️⃣ Validate the book name against our master list (optional but nice)
+    // 4️⃣ Validate the writer and book names against approved lists
     // -----------------------------------------------------------------
+    // Writer: must match one of the writers present in the CSV (case-insensitive)
+    if (!isKnownWriter(guess.writer)) {
+      document.getElementById('feedback').textContent =
+        '⚠️ That writer isn’t recognised. Please pick a writer from the list.';
+      return;                                   // stop – don’t count this as an attempt
+    }
+
+    // Book: must match one of the known Bible book names
     const isKnownBook = BIBLE_BOOKS.some(b => normalize(b) === guess.book);
     if (!isKnownBook) {
       document.getElementById('feedback').textContent =
@@ -351,12 +385,12 @@ if (guessFormEl) {
       const clueKey = `clue_${bookWrongCount}`;
       const clueText = todayVerse && (todayVerse[clueKey] || todayVerse[clueKey.toLowerCase()]);
       if (clueText) {
-        const cluesEl = document.getElementById('clues');
-        if (cluesEl) {
+        const bookClues = document.getElementById('bookClues') || document.getElementById('clues');
+        if (bookClues) {
           const p = document.createElement('p');
           p.className = 'clue';
           p.textContent = `Clue ${bookWrongCount}: ${clueText}`;
-          cluesEl.appendChild(p);
+          bookClues.appendChild(p);
         }
       }
     }
@@ -371,18 +405,17 @@ if (guessFormEl) {
       feedbackEl.textContent = '✅ Perfect! You got everything right.';
       // Append link to the official text & comments for the day
       try {
-        const jwUrl = 'https://wol.jw.org/en/wol/h/r1/lp-e';
+        const jwUrl = buildJwDailyUrl(getTodayIso());
         const br = document.createElement('br');
         const a = document.createElement('a');
         a.href = jwUrl;
         a.target = '_blank';
         a.rel = 'noopener';
         a.textContent = 'Read the actual text and comments for today';
-  a.classList.add('jw-link');
+        a.classList.add('jw-link');
         feedbackEl.appendChild(br);
         feedbackEl.appendChild(a);
       } catch (e) {
-        // defensive: if DOM isn't available for some reason, skip linking
         console.error('Could not append JW link', e);
       }
 
@@ -428,13 +461,13 @@ if (guessFormEl) {
          <strong>${todayVerse.book}</strong> ${todayVerse.chapter}:${todayVerse.verse}`;
       // Append link to the official text & comments for the day
       try {
-        const jwUrl = 'https://wol.jw.org/en/wol/h/r1/lp-e';
+        const jwUrl = buildJwDailyUrl(getTodayIso());
         const a = document.createElement('a');
         a.href = jwUrl;
         a.target = '_blank';
         a.rel = 'noopener';
         a.textContent = 'Read the actual text and comments for today';
-  a.classList.add('jw-link');
+        a.classList.add('jw-link');
         feedbackEl.appendChild(document.createElement('br'));
         feedbackEl.appendChild(a);
       } catch (e) {
@@ -606,6 +639,15 @@ function getTodayIso() {
   return (typeof TEST_TODAY === 'string' && TEST_TODAY) ? TEST_TODAY : new Date().toISOString().slice(0, 10);
 }
 
+// Build a jw.org daily-text link that can open the local app when available.
+// Example: https://www.jw.org/finder?srcid=jwlshare&alias=daily-text&date=20251231&wtlocale=E
+function buildJwDailyUrl(isoDate) {
+  const iso = isoDate || getTodayIso();
+  const ymd = iso.replace(/-/g, ''); // YYYYMMDD
+  const locale = 'E'; // default to English; change if you want locale detection
+  return `https://www.jw.org/finder?srcid=jwlshare&alias=daily-text&date=${ymd}&wtlocale=${locale}`;
+}
+
 // localStorage key
 const STATS_KEY = 'bg_user_stats_v1';
 
@@ -647,7 +689,7 @@ function computeScore(guess, answer, attemptsUsed) {
   if (!answer || !guess || !Number.isFinite(attemptsUsed)) return 0;
 
   // Weights (sum to 100)
-  const W = { writer: 25, book: 30, chapter: 20, verse: 25 };
+  const W = { writer: 40, book: 30, chapter: 20, verse: 10 };
 
   // writer & book are strict equality (normalized)
   const writerScore = (guess.writer === normalize(answer.writer)) ? 1 : 0;
@@ -658,8 +700,8 @@ function computeScore(guess, answer, attemptsUsed) {
   if (Number.isFinite(guess.chapter) && Number.isFinite(answer.chapter)) {
     const d = Math.abs(guess.chapter - answer.chapter);
     if (d === 0) chapterScore = 1;
-    else if (d === 1) chapterScore = 0.6;
-    else if (d <= 3) chapterScore = 0.3;
+    else if (d === 1) chapterScore = 0.8;
+    else if (d <= 3) chapterScore = 0.5;
     else chapterScore = 0;
   }
 
@@ -668,9 +710,9 @@ function computeScore(guess, answer, attemptsUsed) {
   if (Number.isFinite(guess.verse) && Number.isFinite(answer.verse)) {
     const d = Math.abs(guess.verse - answer.verse);
     if (d === 0) verseScore = 1;
-    else if (d === 1) verseScore = 0.7;
-    else if (d <= 3) verseScore = 0.4;
-    else if (d <= 10) verseScore = 0.15;
+    else if (d === 1) verseScore = 0.8;
+    else if (d <= 3) verseScore = 0.6;
+    else if (d <= 10) verseScore = 0.3;
     else verseScore = 0;
   }
 
