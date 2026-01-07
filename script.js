@@ -169,19 +169,18 @@ if (writerInput) {
 }
 
 /* -------------------------------------------------
-   Load the CSV file (works locally and on GitHub Pages)
-   Tries CSV_URL first, then a couple of sensible fallbacks
+   Load the JSON file for January verses
+   Tries a few sensible fallbacks for the same-origin path
    ------------------------------------------------- */
-function tryFetchCsv(urls) {
-  // tries each URL in order, returns a promise that resolves to the text
+function tryFetchJson(urls) {
   let idx = 0;
   function attempt() {
     if (idx >= urls.length) return Promise.reject(new Error('All fetch attempts failed'));
     const u = urls[idx++];
-    console.log('Attempting to load CSV from', u);
+    console.log('Attempting to load JSON from', u);
     return fetch(u).then(r => {
       if (!r.ok) throw new Error(`HTTP ${r.status} for ${u}`);
-      return r.text();
+      return r.json();
     }).catch(err => {
       console.warn('Fetch failed for', u, err.message);
       return attempt();
@@ -190,37 +189,42 @@ function tryFetchCsv(urls) {
   return attempt();
 }
 
-// Build fallback URL candidates
-const candidateUrls = [CSV_URL];
+// Build fallback URL candidates for january_verses.json
+const candidateJsonUrls = ['./january_verses.json'];
 try {
-  // base path of current page (keeps any repo subpath)
   const pathBase = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/\/[^/]*$/, '/');
   const baseCandidate = location.origin + pathBase;
-  candidateUrls.push(baseCandidate + 'verses.csv');
-} catch (e) {
-  // ignore
-}
-// If repository info is known, try GitHub Pages canonical URL
-try {
-  const ghOwner = 'insperitas';
-  const ghRepo = 'bible-verse-guess';
-  candidateUrls.push(`https://` + ghOwner + `.github.io/` + ghRepo + `/verses.csv`);
-} catch (e) {}
+  candidateJsonUrls.push(baseCandidate + 'january_verses.json');
+} catch (e) { /* ignore */ }
 
-tryFetchCsv(candidateUrls)
-  .then(csv => {
-    verses = parseCSV(csv);
-    console.log('✅ CSV parsed – rows:', verses.length);
+tryFetchJson(candidateJsonUrls)
+  .then(data => {
+    // Accept either { verses: [...] } or a raw array
+    const rows = Array.isArray(data) ? data : (data.verses || []);
+    // Ensure chapter/verse are numbers for numeric comparisons elsewhere
+    verses = rows.map(r => ({
+      date: r.date,
+      writer: r.writer || r.Writer || '',
+      book: r.book || r.Book || '',
+      chapter: Number(r.chapter),
+      verse: Number(r.verse),
+      // keep any clue fields and text fields intact
+      clue_1: r.clue_1 || r.clue1 || '',
+      clue_2: r.clue_2 || r.clue2 || '',
+      clue_3: r.clue_3 || r.clue3 || '',
+      clue_4: r.clue_4 || r.clue4 || '',
+      reference: r.reference || r.Reference || '',
+      text: r.text || r.verse_text || r.verseText || ''
+    }));
+    console.log('✅ JSON parsed – rows:', verses.length);
 
-    // populate writer datalist now we have data
     populateWriterDatalist();
-
-    startRound();   // pick today’s verse and initialise UI
+    startRound();
   })
   .catch(err => {
-    console.error('❌ CSV load error →', err);
+    console.error('❌ JSON load error →', err);
     const verseEl = document.getElementById('verse');
-    if (verseEl) verseEl.textContent = '⚠️ Could not load verse data – check that verses.csv is published and reachable (see console).';
+    if (verseEl) verseEl.textContent = '⚠️ Could not load verse data – check that january_verses.json is published and reachable (see console).';
   });
 
 /* -------------------------------------------------
