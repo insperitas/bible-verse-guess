@@ -240,8 +240,14 @@ function startRound() {
   // 👇 Debug print – shows the date in the DevTools console
   console.log('📅 Using date →', today);
 
-  // 2️⃣ Now look up the verse for that date
+  // 2️⃣ Now look up the verse for that date (exact match first)
   todayVerse = verses.find(v => v.date === today);
+  // If no exact match (different year), fallback to match by month-day (MM-DD)
+  if (!todayVerse) {
+    const mmdd = today.slice(5); // extract MM-DD
+    console.log('No exact date match; falling back to month-day match ->', mmdd);
+    todayVerse = verses.find(v => typeof v.date === 'string' && v.date.slice(5) === mmdd);
+  }
 
   // 3️⃣ If no verse for today, show a friendly message
   if (!todayVerse) {
